@@ -1,0 +1,8 @@
+/.idea/
+/__pycache__/
+/build/
+/dist/
+/venv/
+/web/sub_title.ini
+/web/tmp.json
+*.spec

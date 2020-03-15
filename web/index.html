@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+	<script src="js/jquery-3.4.1.min.js"></script>
+    <script src="js/echarts.min.js"></script>
+</head>
+<body>
+    <div id="main" style="width: 100%;height:950px;"></div>
+	<script type="text/javascript">
+	DateObj=$.ajax({url:'sub_title.ini',async:false});
+	myChart = echarts.init(document.getElementById('main'));
+	myChart.showLoading();
+	$.get('tmp.json', function (data) {
+		myChart.hideLoading();
+
+		myChart.setOption(option = {
+			title: {
+				text: '川庆钻探态势感知Sankey Diagram('+DateObj.responseText+')'
+			},
+			tooltip: {
+				trigger: 'item',
+				triggerOn: 'mousemove'
+			},
+			toolbox: {
+				feature: {
+					saveAsImage: {}
+				}
+			},			
+			series: [
+				{
+					type: 'sankey',
+					data: data.nodes,
+					links: data.links,
+					focusNodeAdjacency: 'allEdges',
+					itemStyle: {
+						borderWidth: 1,
+						borderColor: '#aaa'
+					},
+					lineStyle: {
+						color: 'source',
+						curveness: 0.5
+					}
+				}
+			]
+		});
+	});
+	
+	</script>
+</body>
+</html>
