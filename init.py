@@ -3,10 +3,11 @@ import etl
 import os
 
 def init():
-    print("启明星辰SOC日志Sankey图分析生成工具V1.2")
+    print("启明星辰SOC日志Sankey图分析生成工具V1.3")
     # 1.0 基本功能
     # 1.1 修复snakeyjson数据原到目的的数值不一致问题
     # 1.2 增加白名单排除配置文件
+    # 1.3 修复filter正则匹配问题，使用更宽松的search代替match
 
     print("作者：Lenny\n")
 

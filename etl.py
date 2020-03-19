@@ -63,17 +63,19 @@ def generate_json(csv_file, limit, filter_list):
             is_exclude = False
             for filter in filter_list:
                 try:
-                    if(filter['filter_type'] == 'ex' and re.match(filter['pattern_val'], data_row[filter['col_index']])):
+                    if(filter['filter_type'] == 'ex' and re.search(filter['pattern_val'], data_row[filter['col_index']])):
                         print(data_row[0], '\t=>\t', data_row[2][:10] + '…', '\t=>\t', data_row[1], '\t|\t',str(data_row[3]),
                               '\t',filter['tip'],'\t忽略')
                         is_exclude = True
                         break
-                    if (filter['filter_type'] == 'in' and not re.match(filter['pattern_val'],data_row[filter['col_index']])):
+
+                    if (filter['filter_type'] == 'in' and not re.search(filter['pattern_val'],data_row[filter['col_index']])):
                         print(data_row[0], '\t=>\t', data_row[2][:10] + '…', '\t=>\t', data_row[1], '\t|\t',
                               str(data_row[3]),
-                              '\t', filter['tip'], '\t忽略')
+                              '\t', '未'+filter['tip'], '\t忽略')
                         is_exclude = True
                         break
+
                 except:
                     pass
             if(is_exclude):
@@ -159,3 +161,8 @@ def generate_json(csv_file, limit, filter_list):
     print('抽取整理数据完成!')
     return json.dumps(data)
 
+if __name__ == '__main__':
+    filter_list = get_filter('conf/filter.csv')
+    json_data = generate_json('csv/test.csv', 50, filter_list)
+    with open('web/tmp.json', 'w') as f:
+        f.write(json_data)
