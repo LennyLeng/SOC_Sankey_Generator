@@ -3,6 +3,7 @@
 import pandas as pd
 import json
 import re
+
 def get_filter(csv_file):
     filter_list = []
     data = pd.read_csv(csv_file, encoding='gbk', header=None)
@@ -23,15 +24,31 @@ def generate_json(csv_file, limit, filter_list):
     # 读取csv文件
     data = pd.read_csv(csv_file, encoding='gbk', header=None)
 
-    # 生成源地址集合,排除dns
-    i0_tmp = []
-    i0_tmp.extend(data[0].unique())
-    if '源地址' in i0_tmp:
-        i0_tmp.remove('源地址')
-    if '10.132.0.118' in i0_tmp:
-        i0_tmp.remove('10.132.0.118')
-    if '10.132.0.119' in i0_tmp:
-        i0_tmp.remove('10.132.0.119')
+    # 生成源地址集合,根据filter排除
+    i0_set_tmp = []
+    i0_set_tmp.extend(data[0].unique())
+    if '源地址' in i0_set_tmp:
+        i0_set_tmp.remove('源地址')
+
+    for i0_tmp in i0_set_tmp:
+        for filter in filter_list:
+            try:
+                if (filter['filter_type'] == 'ex' and filter['col_index'] == 0 and re.search(filter['pattern_val'], i0_tmp)):
+                    i0_set_tmp.remove(i0_tmp)
+                    break
+
+                if (filter['filter_type'] == 'in' and filter['col_index'] == 0 and not re.search(filter['pattern_val'], i0_tmp)):
+                    i0_set_tmp.remove(i0_tmp)
+                    break
+
+            except:
+                pass
+
+
+#    for filter in filter_list:
+#        if(filter['filter_type'] == 'ex' and str(filter['col_index']) == '0'):
+#            if filter['pattern_val'] in i0_set_tmp:
+#                i0_set_tmp.remove(filter['pattern_val'])
 
     links_tmp = {}
     nodes_tmp = []
@@ -92,7 +109,12 @@ def generate_json(csv_file, limit, filter_list):
                       '\t源目相同或者目的为空\t修正')
                 data_row[1] = '0.0.0.0'
 
-            if (data_row[1] in i0_tmp):
+            if (data_row[0] == '空值'):
+                print(data_row[0], '\t=>\t', data_row[2][:10] + '…', '\t=>\t', data_row[1], '\t|\t', str(data_row[3]),
+                      '\t源目为空\t修正')
+                data_row[0] = '0.0.0.0'
+
+            if (data_row[1] in i0_set_tmp):
                 print(data_row[0], '\t=>\t', data_row[2][:10] + '…', '\t=>\t', data_row[1], '\t|\t', str(data_row[3]),
                       '\t出现打环情况\t忽略')
                 continue
@@ -129,14 +151,14 @@ def generate_json(csv_file, limit, filter_list):
     nodes_tmp = list(set(nodes_tmp))
 
     # 处理nodes_tmp中表头
-    if '源地址' in i0_tmp:
-        i0_tmp.remove('源地址')
-    if '目的地址' in i0_tmp:
-        i0_tmp.remove('目的地址')
-    if '事件名称' in i0_tmp:
-        i0_tmp.remove('事件名称')
-    if '事件数' in i0_tmp:
-        i0_tmp.remove('事件数')
+    if '源地址' in i0_set_tmp:
+        i0_set_tmp.remove('源地址')
+    if '目的地址' in i0_set_tmp:
+        i0_set_tmp.remove('目的地址')
+    if '事件名称' in i0_set_tmp:
+        i0_set_tmp.remove('事件名称')
+    if '事件数' in i0_set_tmp:
+        i0_set_tmp.remove('事件数')
 
     # 处理nodes_tmp中空值情况
     if '空值' in nodes_tmp:
@@ -163,6 +185,6 @@ def generate_json(csv_file, limit, filter_list):
 
 if __name__ == '__main__':
     filter_list = get_filter('conf/filter.csv')
-    json_data = generate_json('csv/test.csv', 50, filter_list)
+    json_data = generate_json('csv/test.csv', '', filter_list)
     with open('web/tmp.json', 'w') as f:
         f.write(json_data)
