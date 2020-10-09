@@ -3,13 +3,15 @@ import etl
 import os
 
 def init():
-    print("启明星辰SOC日志Sankey图分析生成工具V1.4")
+    print("启明星辰SOC日志Sankey图分析生成工具V1.5.1")
     # 1.0   基本功能
     # 1.1   修复snakeyjson数据原到目的的数值不一致问题
     # 1.2   增加白名单排除配置文件
     # 1.3   修复filter正则匹配问题，使用更宽松的search代替match
     # 1.31  修复源ip未空情况
-    # 1.4  修复i0源地址集排除逻辑，打环判定更精确；修复http.server存在缓存，刷新数据不是最新的情况；修复filter文件不在时程序报错的情况。
+    # 1.4   修复i0源地址集排除逻辑，打环判定更精确；修复http.server存在缓存，刷新数据不是最新的情况；修复filter文件不在时程序报错的情况。
+    # 1.5   重构i0源地址集排除逻辑，优化padas读取csv文件逻辑，使用thousands用于处理千分位分割符，使用header用于指定第一行为表头
+    # 1.5.1 新增多级排除逻辑，优化padas读取config文件逻辑
 
     print("作者：Lenny\n")
 

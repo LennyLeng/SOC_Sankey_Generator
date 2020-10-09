@@ -6,6 +6,7 @@ import init
 import os
 import time
 import multiprocessing
+import traceback
 
 def generate_json_and_write_file(csv_file, limit):
     filter_chang_time = float(0)
@@ -20,6 +21,7 @@ def generate_json_and_write_file(csv_file, limit):
                 filter_chang_time = os.stat('conf/filter.csv').st_mtime
         except:
             #当filter文件不存在时，重置文件改变时间
+            traceback.print_exc()
             filter_chang_time = float(0)
         time.sleep(1)
 
@@ -30,7 +32,11 @@ def run():
     http_p = multiprocessing.Process(target=server.run)
     http_p.start()
 
-
+def debug():
+    (csv_file, limit) = init.init()
+    http_p = multiprocessing.Process(target=server.run)
+    http_p.start()
+    generate_json_and_write_file(csv_file, limit)
 
 if __name__ == '__main__':
     multiprocessing.freeze_support()

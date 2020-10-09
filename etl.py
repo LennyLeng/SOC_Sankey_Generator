@@ -6,9 +6,10 @@ import re
 
 def get_filter(csv_file):
     filter_list = []
-    data = pd.read_csv(csv_file, encoding='gbk', header=None)
+    data = pd.read_csv(csv_file, encoding='gbk', header=0)
+
     for data_row in data.values:
-        if (data_row[0].startswith('过滤模式') or data_row[0].startswith('#')):
+        if (data_row[0].startswith('#')):
             continue
         dict = {}
         dict['filter_type'] = data_row[0]
@@ -21,37 +22,17 @@ def get_filter(csv_file):
 
 def generate_json(csv_file, limit, filter_list):
     print('开始抽取整理数据...')
-    # 读取csv文件
-    data = pd.read_csv(csv_file, encoding='gbk', header=None)
+    # 读取csv文件，thousands用于处理千分位分割符，header用于指定第一行为表头
+    data = pd.read_csv(csv_file, encoding='gbk', header=0, thousands=',')
+    #按照事件数量降序排列
+    data = data.sort_values(by='事件数',ascending=False)
 
-    # 生成源地址集合,根据filter排除
-    i0_set_tmp = []
-    i0_set_tmp.extend(data[0].unique())
-    if '源地址' in i0_set_tmp:
-        i0_set_tmp.remove('源地址')
-
-    for i0_tmp in i0_set_tmp:
-        for filter in filter_list:
-            try:
-                if (filter['filter_type'] == 'ex' and filter['col_index'] == 0 and re.search(filter['pattern_val'], i0_tmp)):
-                    i0_set_tmp.remove(i0_tmp)
-                    break
-
-                if (filter['filter_type'] == 'in' and filter['col_index'] == 0 and not re.search(filter['pattern_val'], i0_tmp)):
-                    i0_set_tmp.remove(i0_tmp)
-                    break
-
-            except:
-                pass
-
-
-#    for filter in filter_list:
-#        if(filter['filter_type'] == 'ex' and str(filter['col_index']) == '0'):
-#            if filter['pattern_val'] in i0_set_tmp:
-#                i0_set_tmp.remove(filter['pattern_val'])
+    # 生成打环判定源地址集合,集合set具有不重复特征
+    i0_set_tmp = set()
+    i1_set_tmp = set()
 
     links_tmp = {}
-    nodes_tmp = []
+    nodes_tmp = set()
     links = []
     nodes = []
 
@@ -64,16 +45,13 @@ def generate_json(csv_file, limit, filter_list):
         # data_row[2].replace(" ", "") => 事件名称
         # data_row[3] => 事件数
         if (limit == '' or i < int(limit)):
-            # 跳过表头
-            if (data_row[0] == '源地址' or data_row[1] == '目的地址' or data_row[2].replace(" ", "") == '事件名称'):
-                continue
 
-            #处理数量千分占位符
-            try:
-                data_row[3] = int(data_row[3].replace(',', ''))
-            except:
-                pass
+            #删除首尾空白不可见符
+            data_row[0] = data_row[0].strip()
+            data_row[1] = data_row[1].strip()
+            data_row[2] = data_row[2].strip()
 
+            #处理事件名称中的字符空格
             data_row[2] = data_row[2].replace(" ", "")
 
             #filter list policy 开始
@@ -95,6 +73,7 @@ def generate_json(csv_file, limit, filter_list):
 
                 except:
                     pass
+
             if(is_exclude):
                 continue
             # filter list policy 结束
@@ -108,20 +87,30 @@ def generate_json(csv_file, limit, filter_list):
                 print(data_row[0], '\t=>\t', data_row[2][:10] + '…', '\t=>\t', data_row[1], '\t|\t', str(data_row[3]),
                       '\t源目相同或者目的为空\t修正')
                 data_row[1] = '0.0.0.0'
+                i1_set_tmp.add(data_row[1])
 
             if (data_row[0] == '空值'):
                 print(data_row[0], '\t=>\t', data_row[2][:10] + '…', '\t=>\t', data_row[1], '\t|\t', str(data_row[3]),
-                      '\t源目为空\t修正')
+                      '\t源为空\t修正')
                 data_row[0] = '0.0.0.0'
+                i0_set_tmp.add(data_row[0])
 
-            if (data_row[1] in i0_set_tmp):
+            if (data_row[1] in i0_set_tmp ):
                 print(data_row[0], '\t=>\t', data_row[2][:10] + '…', '\t=>\t', data_row[1], '\t|\t', str(data_row[3]),
                       '\t出现打环情况\t忽略')
                 continue
 
-            nodes_tmp.append(data_row[0])
-            nodes_tmp.append(data_row[1])
-            nodes_tmp.append(data_row[2])
+            if (data_row[0] in i1_set_tmp ):
+                print(data_row[0], '\t=>\t', data_row[2][:10] + '…', '\t=>\t', data_row[1], '\t|\t', str(data_row[3]),
+                      '\t出现多级情况\t忽略')
+                continue
+
+            i0_set_tmp.add(data_row[0])
+            i1_set_tmp.add(data_row[1])
+
+            nodes_tmp.add(data_row[0])
+            nodes_tmp.add(data_row[1])
+            nodes_tmp.add(data_row[2])
 
             tmp = list()
             tmp.append(data_row[0])
@@ -146,24 +135,6 @@ def generate_json(csv_file, limit, filter_list):
             break
         i += 1
 
-
-    # nodes_tmp去重
-    nodes_tmp = list(set(nodes_tmp))
-
-    # 处理nodes_tmp中表头
-    if '源地址' in i0_set_tmp:
-        i0_set_tmp.remove('源地址')
-    if '目的地址' in i0_set_tmp:
-        i0_set_tmp.remove('目的地址')
-    if '事件名称' in i0_set_tmp:
-        i0_set_tmp.remove('事件名称')
-    if '事件数' in i0_set_tmp:
-        i0_set_tmp.remove('事件数')
-
-    # 处理nodes_tmp中空值情况
-    if '空值' in nodes_tmp:
-        nodes_tmp.remove('空值')
-        nodes_tmp.append('0.0.0.0')
 
     # 生成nodes
     for data_row in nodes_tmp:
