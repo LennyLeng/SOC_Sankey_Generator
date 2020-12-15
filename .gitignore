@@ -3,6 +3,7 @@
 /build/
 /dist/
 /venv/
+/csv/
 /web/sub_title.ini
 /web/tmp.json
 *.spec

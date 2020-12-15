@@ -47,8 +47,13 @@ def generate_json(csv_file, limit, filter_list):
         if (limit == '' or i < int(limit)):
 
             #删除首尾空白不可见符
+            data_row[0] = (str)(data_row[0])
             data_row[0] = data_row[0].strip()
+
+            data_row[1] = (str)(data_row[1])
             data_row[1] = data_row[1].strip()
+
+            data_row[2] = (str)(data_row[2])
             data_row[2] = data_row[2].strip()
 
             #处理事件名称中的字符空格
